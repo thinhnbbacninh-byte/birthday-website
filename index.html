@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Birthday</title>
+
+<style>
+    body {
+      margin: 0;
+      background: linear-gradient(#ff9acb);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ===== TOP TITLE (glow) ===== */
+    .title {
+      position: absolute;
+      top: 50px;
+      width: 100%;
+      text-align: center;
+      font-size: 48px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 10px #ff008c;
+      animation: glow 2s infinite;
+      z-index: 2;
+    }
+
+    @keyframes glow {
+      0% { text-shadow: 0 0 10px #fff; }
+      50% { text-shadow: 0 0 25px #ff39c9; }
+      100% { text-shadow: 0 0 10px #fff; }
+    }
+
+    /* ===== BALLOONS ===== */
+    .balloon {
+      position: absolute;
+      bottom: -150px;
+      width: 80px;
+      height: 100px;
+      border-radius: 50%;
+      animation: float 6s infinite;
+      opacity: 0.9;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-400px) rotate(10deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+
+    /* ===== FIREWORK CANVAS ===== */
+    #fireworkCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+    }
+
+    /* Screens */
+    .screen { display:none; text-align:center; }
+    /* center content horizontally + vertically when active */
+    .screen.active {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+    }
+
+    /* Cake container: stack image + title and center them */
+    .cake-container {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
+      z-index: 1;
+    }
+
+    .cake-img { width:200px; margin:0; }
+
+    /* specific title for the cake screen */
+    .cake-title {
+      font-size:36px;
+      margin:0;
+      letter-spacing:4px;
+      text-align:center;
+      color: white;
+      text-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+
+    .btn { padding:10px 20px; margin:10px; border:none; background:#f28b82; color:white; border-radius:6px; cursor:pointer; }
+    .envelope-container { position:relative; display:inline-block; }
+    .envelope-img { width:300px; }
+    .letter { position:absolute; top:40px; left:50%; transform:translateX(-50%) scale(0); width:250px; background:white; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); transition:0.5s; }
+    .letter.show { transform:translateX(-50%) scale(1); }
+    .title1 {
+      position: absolute;
+      top: 80px;
+      width: 100%;
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 10px #ff008c;
+      z-index: 2;
+    }
+</style>
+
+</head>
+<body>
+
+  <canvas id="fireworkCanvas"></canvas>
+
+  <div class="title1">🎉 Chúc Mừng Sinh Nhật Vũ 🎉</div>
+
+  <!-- Balloons -->
+  <div class="balloon" style="left:10%; background:#ff4d6d; animation-delay:0s;"></div>
+  <div class="balloon" style="left:30%; background:#ffdd59; animation-delay:1s;"></div>
+  <div class="balloon" style="left:50%; background:#7bed9f; animation-delay:2s;"></div>
+  <div class="balloon" style="left:70%; background:#70a1ff; animation-delay:1.5s;"></div>
+  <div class="balloon" style="left:90%; background:#ff6b81; animation-delay:0.5s;"></div>
+
+  <script>
+    /* ===== FIREWORK EFFECT ===== */
+    const canvas = document.getElementById("fireworkCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const fireworks = [];
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function Firework() {
+      this.x = random(0, canvas.width);
+      this.y = canvas.height;
+      this.targetX = random(100, canvas.width - 100);
+      this.targetY = random(50, 400);
+      this.particles = [];
+      this.exploded = false;
+    }
+
+    Firework.prototype.update = function () {
+      if (!this.exploded) {
+        this.x += (this.targetX - this.x) * 0.05;
+        this.y += (this.targetY - this.y) * 0.05;
+
+        if (Math.abs(this.x - this.targetX) < 5 && Math.abs(this.y - this.targetY) < 5) {
+          this.exploded = true;
+          for (let i = 0; i < 50; i++) this.particles.push(new Particle(this.x, this.y));
+        }
+      }
+
+      this.particles.forEach(p => p.update());
+    };
+
+    Firework.prototype.draw = function () {
+      if (!this.exploded) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(this.x, this.y, 3, 10);
+      }
+      this.particles.forEach(p => p.draw());
+    };
+
+    function Particle(x, y) {
+      this.x = x;
+      this.y = y;
+      this.speedX = random(-3, 3);
+      this.speedY = random(-3, 3);
+      this.alpha = 1;
+      this.color = `hsl(${random(0, 360)}, 100%, 60%)`;
+    }
+
+    Particle.prototype.update = function () {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      this.alpha -= 0.02;
+    };
+
+    Particle.prototype.draw = function () {
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    };
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (Math.random() < 0.05) fireworks.push(new Firework());
+
+      fireworks.forEach((fw, i) => {
+        fw.update();
+        fw.draw();
+        if (fw.exploded && fw.particles.every(p => p.alpha <= 0)) fireworks.splice(i, 1);
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+  
+
+  <!-- Screen 1: Birthday Cake -->
+  <section id="screen1" class="screen active">
+    <div class="cake-container">
+      <img src="images-removebg-preview.png" alt="Cake" class="cake-img" />
+      <h2 class="cake-title">HAPPY<br>BIRTHDAY</h2>
+      <button id="nextToLetter" class="btn">NEXT</button>
+    </div>
+  </section>
+
+
+  <!-- Screen 2: Envelope + Letter -->
+  <section id="screen2" class="screen">
+    <div class="envelope-container">
+      <img src="images__1_-removebg-preview.png" class="envelope-img" /> <br>
+      <div class="letter" id="letter">
+        <h2>GỬI EM TRAI CỦA CHỊ</h2>
+        <p>Đặt nội dung thư tại đây...</p>
+      </div>
+      <button id="openLetter" class="btn">OPEN</button>
+      <button id="closeLetter" class="btn">CLOSE</button>
+    </div>
+  </section>
+
+  <script>
+    const s1 = document.getElementById('screen1');
+    const s2 = document.getElementById('screen2');
+    const nextBtn = document.getElementById('nextToLetter');
+    const openL = document.getElementById('openLetter');
+    const closeL = document.getElementById('closeLetter');
+    const letter = document.getElementById('letter');
+
+    nextBtn.onclick = () => {
+      s1.classList.remove('active');
+      s2.classList.add('active');
+    };
+
+    openL.onclick = () => {
+      letter.classList.add('show');
+    };
+
+    closeL.onclick = () => {
+      letter.classList.remove('show');
+    };
+  </script>
+</body>
+</html>
